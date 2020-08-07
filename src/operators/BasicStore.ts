@@ -2,7 +2,10 @@ import { Store, RIPOST_TICK } from '../types';
 import { Clock } from '../Clock';
 import { Subscription } from 'suub';
 
-export function BasicStore<State>(clock: Clock, initial: State): Store<State, State> {
+export function BasicStore<State>(
+  clock: Clock,
+  initial: State
+): Store<State | ((prev: State) => State), State> {
   const tick = 0;
   const sub = Subscription<State>() as Subscription<State>;
 
@@ -30,7 +33,7 @@ export function BasicStore<State>(clock: Clock, initial: State): Store<State, St
       }
       return sub.subscribe(cb, onUnsub);
     },
-    destroy,
+    destroy
   };
 
   function destroy() {
@@ -41,8 +44,12 @@ export function BasicStore<State>(clock: Clock, initial: State): Store<State, St
     sub.unsubscribeAll();
   }
 
-  function emit(state: State) {
-    nextState = state;
+  function emit(state: State | ((prev: State) => State)) {
+    if (typeof state !== 'function') {
+      nextState = state;
+    } else {
+      nextState = (state as any)(nextState);
+    }
     clock.emit();
   }
 }
