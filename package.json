@@ -1,20 +1,20 @@
 {
-  "name": "package-template",
+  "name": "synclock",
   "version": "0.0.0",
   "description": "",
   "keywords": [],
-  "homepage": "https://github.com/etienne-dldc/package-template#readme",
+  "homepage": "https://github.com/etienne-dldc/synclock#readme",
   "bugs": {
-    "url": "https://github.com/etienne-dldc/package-template/issues"
+    "url": "https://github.com/etienne-dldc/synclock/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/etienne-dldc/package-template.git"
+    "url": "git+ssh://git@github.com/etienne-dldc/synclock.git"
   },
   "license": "MIT",
   "author": "Etienne Dldc <e.deladonchamps@gmail.com>",
   "main": "dist/index.js",
-  "module": "dist/package-template.esm.js",
+  "module": "dist/synclock.esm.js",
   "typings": "dist/index.d.ts",
   "directories": {
     "example": "examples",
