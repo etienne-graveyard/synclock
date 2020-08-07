@@ -6,7 +6,7 @@ import { Clock } from './Clock';
 import { Select } from './operators/Select';
 import { Unwrap } from './operators/Unwrap';
 import { ReducerStore } from './operators/ReducerStore';
-import { BasicStore } from './operators/BasicStore';
+import { BasicStore, ValOrUpdateFn } from './operators/BasicStore';
 import { Watch } from './operators/Watch';
 import { Effect } from './operators/Effect';
 
@@ -18,7 +18,7 @@ export interface Context extends Destroyable {
     initial: State,
     reducer: (state: State, message: Mutation) => State
   ): Store<Mutation, State>;
-  basicStore<State>(initial: State): Store<State, State>;
+  basicStore<State>(initial: State): Store<ValOrUpdateFn<State>, State>;
   join<T extends { [key: string]: Value<any> }>(deps: T): Value<ExtractValues<T>>;
   listMap<Item, Child extends Destroyable>(
     parent: Value<Array<Item>>,
@@ -45,7 +45,7 @@ export function Context(clock: Clock): Context {
   }
 
   function destroy() {
-    stores.forEach((s) => {
+    stores.forEach(s => {
       s.destroy();
     });
   }
@@ -60,7 +60,7 @@ export function Context(clock: Clock): Context {
     ): Store<Mutation, State> {
       return register(ReducerStore(clock, initial, reducer));
     },
-    basicStore<State>(initial: State): Store<State, State> {
+    basicStore<State>(initial: State): Store<ValOrUpdateFn<State>, State> {
       return register(BasicStore(clock, initial));
     },
     join<T extends { [key: string]: Value<any> }>(deps: T): Value<ExtractValues<T>> {
@@ -91,6 +91,6 @@ export function Context(clock: Clock): Context {
     },
     effect<T>(store: Value<T>, onEmit: (value: T) => void): Destroyable {
       return register(Effect(clock, store, onEmit));
-    },
+    }
   };
 }

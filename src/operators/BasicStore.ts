@@ -2,10 +2,12 @@ import { Store, RIPOST_TICK } from '../types';
 import { Clock } from '../Clock';
 import { Subscription } from 'suub';
 
+export type ValOrUpdateFn<T> = T | ((prev: T) => T);
+
 export function BasicStore<State>(
   clock: Clock,
   initial: State
-): Store<State | ((prev: State) => State), State> {
+): Store<ValOrUpdateFn<State>, State> {
   const tick = 0;
   const sub = Subscription<State>() as Subscription<State>;
 
@@ -44,7 +46,7 @@ export function BasicStore<State>(
     sub.unsubscribeAll();
   }
 
-  function emit(state: State | ((prev: State) => State)) {
+  function emit(state: ValOrUpdateFn<State>) {
     if (typeof state !== 'function') {
       nextState = state;
     } else {
