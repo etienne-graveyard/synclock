@@ -1,14 +1,14 @@
 import { Clock } from './Clock';
 import { Context } from './Context';
 
-export interface RiposteManager {
+export interface Manager {
   createContext: () => Context;
 }
 
-export function RiposteManager() {
+export function Manager() {
   const clock = Clock();
 
   return {
-    createContext: () => Context(clock),
+    createContext: () => Context(clock)
   };
 }

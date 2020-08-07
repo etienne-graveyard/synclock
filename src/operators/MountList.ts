@@ -1,4 +1,4 @@
-import { Value, RIPOST_TICK, Destroyable } from '../types';
+import { Value, SYNCLOCK_TICK, Destroyable } from '../types';
 import { Clock } from '../Clock';
 import { Static } from './Static';
 import { Subscription } from 'suub';
@@ -8,25 +8,25 @@ interface InternalItem<Item, Child extends Destroyable> {
   item: Item;
 }
 
-export function ListMap<Item, Child extends Destroyable>(
+export function MountList<Item, Child extends Destroyable>(
   clock: Clock,
   parent: Value<Array<Item>>,
   mount: (item: Value<Item>) => Child,
   equal: (l: Item, r: Item) => boolean = (l, r) => l === r
 ): Value<Array<Child>> {
-  const tick = parent[RIPOST_TICK] + 1;
+  const tick = parent[SYNCLOCK_TICK] + 1;
   const sub = Subscription<Array<Child>>() as Subscription<Array<Child>>;
   let parentValue = parent.get();
   let nextParentValue = parentValue;
-  let internal: Array<InternalItem<Item, Child>> = parentValue.map((item) => {
+  let internal: Array<InternalItem<Item, Child>> = parentValue.map(item => {
     const itemStore = Static(tick + 1, item);
     const child = mount(itemStore);
     return {
       item,
-      child,
+      child
     };
   });
-  let state: Array<Child> = internal.map((int) => int.child);
+  let state: Array<Child> = internal.map(int => int.child);
   let destroyed = false;
 
   const unsubClock = clock.subscribe(tick, () => {
@@ -35,14 +35,14 @@ export function ListMap<Item, Child extends Destroyable>(
     }
     if (nextParentValue !== parentValue) {
       parentValue = nextParentValue;
-      internal.forEach((intern) => {
-        const exist = parentValue.find((item) => equal(item, intern.item));
+      internal.forEach(intern => {
+        const exist = parentValue.find(item => equal(item, intern.item));
         if (exist === undefined) {
           intern.child.destroy();
         }
       });
-      const nextInternal: Array<InternalItem<Item, Child>> = parentValue.map((item) => {
-        const exist = internal.find((intern) => equal(item, intern.item));
+      const nextInternal: Array<InternalItem<Item, Child>> = parentValue.map(item => {
+        const exist = internal.find(intern => equal(item, intern.item));
         if (exist) {
           return exist;
         }
@@ -51,12 +51,12 @@ export function ListMap<Item, Child extends Destroyable>(
         return { child, item };
       });
       internal = nextInternal;
-      state = internal.map((int) => int.child);
+      state = internal.map(int => int.child);
       sub.emit(state);
     }
   });
 
-  const unsubParent = parent.sub((newList) => {
+  const unsubParent = parent.sub(newList => {
     nextParentValue = newList;
   });
 
@@ -71,7 +71,7 @@ export function ListMap<Item, Child extends Destroyable>(
   }
 
   return {
-    [RIPOST_TICK]: tick,
+    [SYNCLOCK_TICK]: tick,
     destroy,
     get: () => state,
     sub: (cb, onUnsub) => {
@@ -79,6 +79,6 @@ export function ListMap<Item, Child extends Destroyable>(
         throw new Error('Destroyed');
       }
       return sub.subscribe(cb, onUnsub);
-    },
+    }
   };
 }

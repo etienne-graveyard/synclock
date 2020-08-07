@@ -1,3 +1,3 @@
-export * from './RiposteManager';
+export * from './Manager';
 export * from './types';
-export type { Context } from './Context';
+export * from './Context';

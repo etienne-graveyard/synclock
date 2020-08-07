@@ -1,9 +1,9 @@
 import { Subscription } from 'suub';
-import { Value, RIPOST_TICK, Callback } from '../types';
+import { Value, SYNCLOCK_TICK, Callback } from '../types';
 import { Clock } from '../Clock';
 
 export function Unwrap<T>(clock: Clock, parent: Value<Value<T> | null>): Value<T | null> {
-  const tick = parent[RIPOST_TICK] + 1;
+  const tick = parent[SYNCLOCK_TICK] + 1;
   const sub = Subscription<T | null>() as Subscription<T | null>;
   let unsubStore: Callback | null = null;
   let destroyed = false;
@@ -14,7 +14,7 @@ export function Unwrap<T>(clock: Clock, parent: Value<Value<T> | null>): Value<T
   let state: T | null = nextStore === null ? null : nextStore.get();
   let nextState: T | null = state;
 
-  const unsubParent = parent.sub((parent) => {
+  const unsubParent = parent.sub(parent => {
     nextStore = parent;
   }, destroy);
 
@@ -27,7 +27,7 @@ export function Unwrap<T>(clock: Clock, parent: Value<Value<T> | null>): Value<T
     }
   });
 
-  const childStoreTick = store === null ? 0 : store[RIPOST_TICK] + 1;
+  const childStoreTick = store === null ? 0 : store[SYNCLOCK_TICK] + 1;
   const childTick = Math.max(tick + 1, childStoreTick);
   const unsubStoreClock = clock.subscribe(childTick, onTickChild);
 
@@ -47,7 +47,7 @@ export function Unwrap<T>(clock: Clock, parent: Value<Value<T> | null>): Value<T
     }
     if (newStore !== null) {
       unsubStore = newStore.sub(
-        (v) => {
+        v => {
           nextState = v;
         },
         () => {
@@ -55,7 +55,7 @@ export function Unwrap<T>(clock: Clock, parent: Value<Value<T> | null>): Value<T
         }
       );
       nextState = newStore.get();
-      const childTick = Math.max(tick + 1, newStore[RIPOST_TICK] + 1);
+      const childTick = Math.max(tick + 1, newStore[SYNCLOCK_TICK] + 1);
       // update sub tick
       clock.subscribe(childTick, onTickChild);
     } else {
@@ -74,7 +74,7 @@ export function Unwrap<T>(clock: Clock, parent: Value<Value<T> | null>): Value<T
   }
 
   return {
-    [RIPOST_TICK]: tick,
+    [SYNCLOCK_TICK]: tick,
     get: () => state,
     sub: (cb, onUnsub) => {
       if (destroyed) {
@@ -82,6 +82,6 @@ export function Unwrap<T>(clock: Clock, parent: Value<Value<T> | null>): Value<T
       }
       return sub.subscribe(cb, onUnsub);
     },
-    destroy,
+    destroy
   };
 }

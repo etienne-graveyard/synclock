@@ -1,8 +1,8 @@
 import { Clock } from '../Clock';
-import { Value, Destroyable, RIPOST_TICK } from '../types';
+import { Value, Destroyable, SYNCLOCK_TICK } from '../types';
 
 export function Watch<T>(clock: Clock, store: Value<T>, onEmit: (value: T) => void): Destroyable {
-  const tick = store[RIPOST_TICK] + 1;
+  const tick = store[SYNCLOCK_TICK] + 1;
   let state: T = store.get();
   let nextState: T = state;
 
@@ -13,7 +13,7 @@ export function Watch<T>(clock: Clock, store: Value<T>, onEmit: (value: T) => vo
     }
   });
 
-  const unsubStore = store.sub((val) => {
+  const unsubStore = store.sub(val => {
     nextState = val;
   });
 
@@ -21,6 +21,6 @@ export function Watch<T>(clock: Clock, store: Value<T>, onEmit: (value: T) => vo
     destroy: () => {
       unsubClock();
       unsubStore();
-    },
+    }
   };
 }

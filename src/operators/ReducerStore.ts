@@ -1,4 +1,4 @@
-import { Store, RIPOST_TICK } from '../types';
+import { Store, SYNCLOCK_TICK } from '../types';
 import { Clock } from '../Clock';
 import { Subscription } from 'suub';
 
@@ -25,7 +25,7 @@ export function ReducerStore<Mutation, State>(
   });
 
   return {
-    [RIPOST_TICK]: tick,
+    [SYNCLOCK_TICK]: tick,
     emit,
     get: () => state,
     sub: (cb, onUnsub) => {
@@ -34,7 +34,7 @@ export function ReducerStore<Mutation, State>(
       }
       return sub.subscribe(cb, onUnsub);
     },
-    destroy,
+    destroy
   };
 
   function destroy() {

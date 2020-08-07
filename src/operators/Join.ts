@@ -1,9 +1,13 @@
 import { Subscription } from 'suub';
-import { Value, Callback, RIPOST_TICK, ExtractValues } from '../types';
+import { Value, Callback, SYNCLOCK_TICK, ExtractValues } from '../types';
 import { Clock } from '../Clock';
 
-export function Join<T extends { [key: string]: Value<any> }>(clock: Clock, deps: T): Value<ExtractValues<T>> {
-  const tick = Array.from(Object.values(deps)).reduce((acc, v) => Math.max(acc, v[RIPOST_TICK]), 0) + 1;
+export function Join<T extends { [key: string]: Value<any> }>(
+  clock: Clock,
+  deps: T
+): Value<ExtractValues<T>> {
+  const tick =
+    Array.from(Object.values(deps)).reduce((acc, v) => Math.max(acc, v[SYNCLOCK_TICK]), 0) + 1;
   const sub = Subscription<ExtractValues<T>>() as Subscription<ExtractValues<T>>;
   let state: ExtractValues<T> = Object.keys(deps).reduce<ExtractValues<T>>((acc, key) => {
     if (!deps[key]) {
@@ -29,14 +33,14 @@ export function Join<T extends { [key: string]: Value<any> }>(clock: Clock, deps
 
   function subDeps(): Callback {
     let unsubs: Array<Callback> = [];
-    Object.keys(deps).forEach((key) => {
+    Object.keys(deps).forEach(key => {
       unsubs.push(
         deps[key].sub(
-          (value) => {
+          value => {
             if (nextState[key] !== value) {
               nextState = {
                 ...nextState,
-                [key]: value,
+                [key]: value
               };
             }
           },
@@ -47,7 +51,7 @@ export function Join<T extends { [key: string]: Value<any> }>(clock: Clock, deps
       );
     });
     return () => {
-      unsubs.forEach((unsub) => {
+      unsubs.forEach(unsub => {
         unsub();
       });
     };
@@ -63,7 +67,7 @@ export function Join<T extends { [key: string]: Value<any> }>(clock: Clock, deps
   }
 
   return {
-    [RIPOST_TICK]: tick,
+    [SYNCLOCK_TICK]: tick,
     get: () => state,
     sub: (cb, onUnsub) => {
       if (destroyed) {
@@ -71,6 +75,6 @@ export function Join<T extends { [key: string]: Value<any> }>(clock: Clock, deps
       }
       return sub.subscribe(cb, onUnsub);
     },
-    destroy,
+    destroy
   };
 }

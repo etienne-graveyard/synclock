@@ -1,5 +1,5 @@
 import { Subscription } from 'suub';
-import { Value, RIPOST_TICK } from '../types';
+import { Value, SYNCLOCK_TICK } from '../types';
 import { Clock } from '../Clock';
 
 export function Select<Parent, State>(
@@ -8,7 +8,7 @@ export function Select<Parent, State>(
   selector: (parent: Parent) => State,
   equal: (l: State, r: State) => boolean = (l, r) => l === r
 ): Value<State> {
-  const tick = parent[RIPOST_TICK] + 1;
+  const tick = parent[SYNCLOCK_TICK] + 1;
   const sub = Subscription<State>() as Subscription<State>;
   let parentValue = parent.get();
   let nextParentValue = parentValue;
@@ -29,7 +29,7 @@ export function Select<Parent, State>(
     }
   });
 
-  const unsubParent = parent.sub((parent) => {
+  const unsubParent = parent.sub(parent => {
     nextParentValue = parent;
   }, destroy);
 
@@ -43,7 +43,7 @@ export function Select<Parent, State>(
   }
 
   return {
-    [RIPOST_TICK]: tick,
+    [SYNCLOCK_TICK]: tick,
     get: () => state,
     sub: (cb, onUnsub) => {
       if (destroyed) {
@@ -51,6 +51,6 @@ export function Select<Parent, State>(
       }
       return sub.subscribe(cb, onUnsub);
     },
-    destroy,
+    destroy
   };
 }
