@@ -1,20 +1,19 @@
-import { Value, SYNCLOCK, Destroyable, Clock as ClockType } from '../types';
+import { Value, SYNCLOCK_TICK, Destroyable } from '../types';
+import { Clock } from '../Clock';
+import { Static } from './Static';
 import { Subscription } from 'suub';
-import { constant } from '../internal/constant';
 
-export function mountMaybe<Item, Child extends Destroyable>(
+export function MountMaybe<Item, Child extends Destroyable>(
+  clock: Clock,
   parent: Value<Item | null>,
   mount: (item: Value<Item>) => Child,
   equal: (l: Item | null, r: Item | null) => boolean = (l, r) => l === r
 ): Value<Child | null> {
-  const clock = parent[SYNCLOCK].clock;
-  const tick = parent[SYNCLOCK].tick + 1;
-
+  const tick = parent[SYNCLOCK_TICK] + 1;
   const sub = Subscription<Child | null>() as Subscription<Child | null>;
   let parentValue = parent.get();
   let nextParentValue = parentValue;
-  let internal: Child | null =
-    parentValue === null ? null : mount(constant(clock, tick + 1, parentValue));
+  let internal: Child | null = parentValue === null ? null : mount(Static(tick + 1, parentValue));
   let destroyed = false;
 
   const unsubClock = clock.subscribe(tick, () => {
@@ -43,7 +42,7 @@ export function mountMaybe<Item, Child extends Destroyable>(
       internal.destroy();
     }
     // mount
-    internal = mount(constant(clock, tick + 1, nextParentValue));
+    internal = mount(Static(tick + 1, nextParentValue));
     sub.emit(internal);
   });
 
@@ -62,7 +61,7 @@ export function mountMaybe<Item, Child extends Destroyable>(
   }
 
   return {
-    [SYNCLOCK]: { tick, clock },
+    [SYNCLOCK_TICK]: tick,
     destroy,
     get: () => internal,
     sub: (cb, onUnsub) => {

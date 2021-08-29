@@ -1,10 +1,13 @@
 import { Subscription } from 'suub';
-import { Value, Callback, ExtractValues, SYNCLOCK } from '../types';
-import { mergeClocks } from '../Clock';
+import { Value, Callback, SYNCLOCK_TICK, ExtractValues } from '../types';
+import { Clock } from '../Clock';
 
-export function join<T extends { [key: string]: Value<any> }>(deps: T): Value<ExtractValues<T>> {
-  const clock = mergeClocks(...Array.from(Object.values(deps)).map(v => v[SYNCLOCK]));
-  const tick = 0;
+export function Join<T extends { [key: string]: Value<any> }>(
+  clock: Clock,
+  deps: T
+): Value<ExtractValues<T>> {
+  const tick =
+    Array.from(Object.values(deps)).reduce((acc, v) => Math.max(acc, v[SYNCLOCK_TICK]), 0) + 1;
   const sub = Subscription<ExtractValues<T>>() as Subscription<ExtractValues<T>>;
   let state: ExtractValues<T> = Object.keys(deps).reduce<ExtractValues<T>>((acc, key) => {
     if (!deps[key]) {
@@ -64,7 +67,7 @@ export function join<T extends { [key: string]: Value<any> }>(deps: T): Value<Ex
   }
 
   return {
-    [SYNCLOCK]: { tick, clock },
+    [SYNCLOCK_TICK]: tick,
     get: () => state,
     sub: (cb, onUnsub) => {
       if (destroyed) {

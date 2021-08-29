@@ -1,4 +1,4 @@
-import { Callback, Clock as ClockType, Internal } from './types';
+import { Callback } from './types';
 
 interface SubscriptionItem {
   tick: number;
@@ -6,33 +6,12 @@ interface SubscriptionItem {
   unsubscribe: Callback;
 }
 
-export function mergeClocks(...clocks: Array<Internal>): ClockType {
-  const resolved = new Map<ClockType, number>();
-  clocks.forEach(({ clock, tick }) => {
-    if (!resolved.has(clock)) {
-      resolved.set(clock, tick + 1);
-    } else {
-      resolved.set(clock, Math.max(tick + 1, resolved.get(clock)!));
-    }
-  });
-  const localClock = Clock();
-
-  const unsubs = Array.from(resolved.entries()).map(([clock, tick]) => {
-    return clock.subscribe(tick, localClock.emit);
-  });
-
-  return {
-    ...localClock,
-    destroy: () => {
-      unsubs.forEach(unsub => {
-        unsub();
-      });
-      localClock.destroy();
-    }
-  };
+export interface Clock {
+  emit(): void;
+  subscribe(tick: number, callback: Callback): Callback;
 }
 
-export function Clock(): ClockType {
+export function Clock() {
   const maxRecursiveCall = 1000;
   const maxSubscriptionCount = 10000;
 
@@ -40,16 +19,6 @@ export function Clock(): ClockType {
   let nextSubscriptions: Array<SubscriptionItem> = [];
   const emitQueue: Array<{}> = [];
   let isEmitting = false;
-
-  return {
-    subscribe,
-    emit,
-    destroy
-  };
-
-  function destroy() {
-    throw new Error(`Cannot destroy this !`);
-  }
 
   function emit(): void {
     emitQueue.push({});
@@ -103,7 +72,7 @@ export function Clock(): ClockType {
     subscriptions.push({
       tick,
       callback: callback,
-      unsubscribe: unsubscribeCurrent
+      unsubscribe: unsubscribeCurrent,
     });
     sortSubscriptions();
 
@@ -112,7 +81,7 @@ export function Clock(): ClockType {
         return;
       }
       isSubscribed = false;
-      const index = subscriptions.findIndex(i => i.callback === callback);
+      const index = subscriptions.findIndex((i) => i.callback === callback);
 
       // isSubscribed is true but the callback is not in the list
       // this should not happend but if it does we ignore the unsub
@@ -125,7 +94,7 @@ export function Clock(): ClockType {
       }
       subscriptions.splice(index, 1);
       // remove from queue
-      const queueIndex = nextSubscriptions.findIndex(i => i.callback === callback);
+      const queueIndex = nextSubscriptions.findIndex((i) => i.callback === callback);
       if (queueIndex >= 0) {
         nextSubscriptions.splice(queueIndex, 1);
       }
@@ -141,6 +110,11 @@ export function Clock(): ClockType {
   }
 
   function findSubscription(callback: Callback): SubscriptionItem | undefined {
-    return subscriptions.find(l => l.callback === callback);
+    return subscriptions.find((l) => l.callback === callback);
   }
+
+  return {
+    subscribe,
+    emit,
+  };
 }

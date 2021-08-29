@@ -1,9 +1,9 @@
 import { Subscription } from 'suub';
-import { Value, SYNCLOCK, Callback } from '../types';
+import { Value, SYNCLOCK_TICK, Callback } from '../types';
+import { Clock } from '../Clock';
 
-export function unwrap<T>(parent: Value<Value<T> | null>): Value<T | null> {
-  const clock = parent[SYNCLOCK].clock;
-  const tick = parent[SYNCLOCK].tick + 1;
+export function Unwrap<T>(clock: Clock, parent: Value<Value<T> | null>): Value<T | null> {
+  const tick = parent[SYNCLOCK_TICK] + 1;
   const sub = Subscription<T | null>() as Subscription<T | null>;
   let unsubStore: Callback | null = null;
   let destroyed = false;
@@ -27,7 +27,7 @@ export function unwrap<T>(parent: Value<Value<T> | null>): Value<T | null> {
     }
   });
 
-  const childStoreTick = store === null ? 0 : store[SYNCLOCK].tick + 1;
+  const childStoreTick = store === null ? 0 : store[SYNCLOCK_TICK] + 1;
   const childTick = Math.max(tick + 1, childStoreTick);
   const unsubStoreClock = clock.subscribe(childTick, onTickChild);
 
@@ -55,7 +55,7 @@ export function unwrap<T>(parent: Value<Value<T> | null>): Value<T | null> {
         }
       );
       nextState = newStore.get();
-      const childTick = Math.max(tick + 1, newStore[SYNCLOCK].tick + 1);
+      const childTick = Math.max(tick + 1, newStore[SYNCLOCK_TICK] + 1);
       // update sub tick
       clock.subscribe(childTick, onTickChild);
     } else {
@@ -74,7 +74,7 @@ export function unwrap<T>(parent: Value<Value<T> | null>): Value<T | null> {
   }
 
   return {
-    [SYNCLOCK]: { tick, clock },
+    [SYNCLOCK_TICK]: tick,
     get: () => state,
     sub: (cb, onUnsub) => {
       if (destroyed) {
